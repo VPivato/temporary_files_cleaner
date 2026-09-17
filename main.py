@@ -12,21 +12,6 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(container)
         main_layout = QVBoxLayout(container)
         
-        separator1 = QFrame()
-        separator1.setFrameShape(QFrame.Shape.HLine)
-        separator1.setFrameShadow(QFrame.Shadow.Sunken)
-        separator1.setLineWidth(1)
-        
-        separator2 = QFrame()
-        separator2.setFrameShape(QFrame.Shape.HLine)
-        separator2.setFrameShadow(QFrame.Shadow.Sunken)
-        separator2.setLineWidth(1)
-        
-        separator3 = QFrame()
-        separator3.setFrameShape(QFrame.Shape.HLine)
-        separator3.setFrameShadow(QFrame.Shadow.Sunken)
-        separator3.setLineWidth(1)
-        
         # 1 - Seção Usuário e Sistema
         main_layout.addWidget(QLabel("1 - Usuário e sistema"))
         
@@ -37,9 +22,7 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(cb2)
         main_layout.addWidget(cb3)
         
-        main_layout.addSpacing(5)
-        main_layout.addWidget(separator1)
-        main_layout.addSpacing(5)
+        self.addSeparator(main_layout)
         
         
         # 2 - Seção Sistema e Windows Update
@@ -50,9 +33,7 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(cb4)
         main_layout.addWidget(cb5)
         
-        main_layout.addSpacing(5)
-        main_layout.addWidget(separator2)
-        main_layout.addSpacing(5)
+        self.addSeparator(main_layout)
         
         
         # 3 - Seção Navegadores
@@ -63,9 +44,7 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(cb6)
         main_layout.addWidget(cb7)
         
-        main_layout.addSpacing(5)
-        main_layout.addWidget(separator3)
-        main_layout.addSpacing(5)
+        self.addSeparator(main_layout)
         
         
         # Checkoxes ToolTips
@@ -84,6 +63,17 @@ class MainWindow(QMainWindow):
         btn.setFixedHeight(30)
         
         main_layout.addWidget(btn)
+    
+    def addSeparator(self, parent, line_size=1, spacing_top=5, spacing_bottom=5):
+        sep = QFrame(
+            frameShape=QFrame.Shape.HLine,
+            frameShadow=QFrame.Shadow.Sunken,
+            lineWidth=line_size
+        )
+        
+        parent.addSpacing(spacing_top)
+        parent.addWidget(sep)
+        parent.addSpacing(spacing_bottom)
 
  
 if __name__ == "__main__":
