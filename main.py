@@ -1,15 +1,25 @@
 from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QCheckBox, QPushButton,QVBoxLayout, QHBoxLayout, QWidget, QFrame
 from PySide6.QtCore import Qt
 from pathlib import Path
-import shutil
+import shutil, logging, os
+from logging.handlers import RotatingFileHandler
 from folder_options import FOLDER_OPTIONS
-import logging
 
-logging.basicConfig(
-    filename="cleanup.log",
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
+log_dir = Path(os.environ["LOCALAPPDATA"]) / "TemporaryFilesCleaner"
+log_dir.mkdir(parents=True, exist_ok=True)
+
+handler = RotatingFileHandler(
+    filename=log_dir / "cleanup.log",
+    maxBytes=1024 * 1024, # 1 MiB
+    backupCount=2
 )
+handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+handler.setLevel(logging.INFO)
+
+logger = logging.getLogger(__name__)
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -84,7 +94,7 @@ class MainWindow(QMainWindow):
                 else:
                     item.unlink()
             except (PermissionError, OSError) as e:
-                logging.info(f"Falha ao excluir {item}: {e}")
+                logger.warning(f"Falha ao excluir {item}: {e}")
     
     def execute_cleanup(self):
         for checkbox, path in self.checkboxpaths.items():
