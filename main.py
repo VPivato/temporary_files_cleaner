@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QCheckBox, QPushButton,QVBoxLayout, QHBoxLayout, QWidget, QFrame
 from PySide6.QtCore import Qt
 from pathlib import Path
-import shutil, logging, os
+import shutil, logging, os, ctypes, sys, subprocess
 from logging.handlers import RotatingFileHandler
 from folder_options import FOLDER_OPTIONS
 
@@ -19,6 +19,22 @@ handler.setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
 logger.addHandler(handler)
 logger.setLevel(logging.INFO)
+
+def is_admin():
+    try:
+        return ctypes.windll.shell32.IsUserAnAdmin()
+    except:
+        return False
+
+def get_pythonw():
+    """pythonw.exe para não exibir um terminal ao relançar o processo com privilégios de administrador"""
+    
+    pythonw = Path(sys.executable).with_name("pythonw.exe")
+    
+    if pythonw.exists():
+        return str(pythonw)
+    
+    return sys.executable
 
 
 class MainWindow(QMainWindow):
@@ -40,7 +56,7 @@ class MainWindow(QMainWindow):
         for opt in FOLDER_OPTIONS[0]:
             cb = QCheckBox(opt["label"])
             cb.setToolTip(opt["tooltip"])
-            self.checkboxpaths[cb] = opt["path"]
+            self.checkboxpaths[cb] = [opt["path"], opt["requires_admin"]]
             main_layout.addWidget(cb)
         
         self.addSeparator(main_layout)
@@ -52,7 +68,7 @@ class MainWindow(QMainWindow):
         for opt in FOLDER_OPTIONS[1]:
             cb = QCheckBox(opt["label"])
             cb.setToolTip(opt["tooltip"])
-            self.checkboxpaths[cb] = opt["path"]
+            self.checkboxpaths[cb] = [opt["path"], opt["requires_admin"]]
             main_layout.addWidget(cb)
         
         self.addSeparator(main_layout)
@@ -64,7 +80,7 @@ class MainWindow(QMainWindow):
         for opt in FOLDER_OPTIONS[2]:
             cb = QCheckBox(opt["label"])
             cb.setToolTip(opt["tooltip"])
-            self.checkboxpaths[cb] = opt["path"]
+            self.checkboxpaths[cb] = [opt["path"], opt["requires_admin"]]
             main_layout.addWidget(cb)
         
         self.addSeparator(main_layout)
@@ -97,9 +113,26 @@ class MainWindow(QMainWindow):
                 logger.warning(f"Falha ao excluir {item}: {e}")
     
     def execute_cleanup(self):
-        for checkbox, path in self.checkboxpaths.items():
+        for checkbox, (path, requires_admin) in self.checkboxpaths.items():
             if checkbox.isChecked():
+                if requires_admin and not is_admin():
+                    self.request_admin_privileges()
                 self.clear_folder(path)
+    
+    def request_admin_privileges(self):
+        if is_admin():
+            return
+        else:
+            try:
+                result = ctypes.windll.shell32.ShellExecuteW(None, "runas", get_pythonw(), subprocess.list2cmdline(sys.argv), None, 1)
+                if result > 32:
+                    logger.info("Iniciado: processo com privilegios de administrador")
+                    sys.exit()
+                else:
+                    logger.error(f"Não iniciado: processo com privilegios de administrador")
+                    return False
+            except Exception as e:
+                logger.error(f"Erro ao soliticar elevação - {e}")
 
  
 if __name__ == "__main__":
