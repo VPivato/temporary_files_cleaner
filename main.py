@@ -1,12 +1,17 @@
 from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QCheckBox, QPushButton,QVBoxLayout, QHBoxLayout, QWidget, QFrame
 from PySide6.QtCore import Qt
+from pathlib import Path
+import os, shutil
+from folder_options import FOLDER_OPTIONS
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         
         self.setWindowTitle("Arquivos Temporários")
-        self.setFixedSize(300, 380)
+        self.setFixedSize(300, 410)
+        
+        self.checkboxpaths = {}
         
         container = QWidget()
         self.setCentralWidget(container)
@@ -15,12 +20,11 @@ class MainWindow(QMainWindow):
         # 1 - Seção Usuário e Sistema
         main_layout.addWidget(QLabel("1 - Usuário e sistema"))
         
-        cb1 = QCheckBox("temp")
-        cb2 = QCheckBox("%temp%")
-        cb3 = QCheckBox("SystemTemp")
-        main_layout.addWidget(cb1)
-        main_layout.addWidget(cb2)
-        main_layout.addWidget(cb3)
+        for opt in FOLDER_OPTIONS[0]:
+            cb = QCheckBox(opt["label"])
+            cb.setToolTip(opt["tooltip"])
+            self.checkboxpaths[cb] = opt["path"]
+            main_layout.addWidget(cb)
         
         self.addSeparator(main_layout)
         
@@ -28,10 +32,11 @@ class MainWindow(QMainWindow):
         # 2 - Seção Sistema e Windows Update
         main_layout.addWidget(QLabel("2 - Caches do sistema e Win Update"))
         
-        cb4 = QCheckBox("SoftwareDistribution")
-        cb5 = QCheckBox("prefetch")
-        main_layout.addWidget(cb4)
-        main_layout.addWidget(cb5)
+        for opt in FOLDER_OPTIONS[1]:
+            cb = QCheckBox(opt["label"])
+            cb.setToolTip(opt["tooltip"])
+            self.checkboxpaths[cb] = opt["path"]
+            main_layout.addWidget(cb)
         
         self.addSeparator(main_layout)
         
@@ -39,30 +44,19 @@ class MainWindow(QMainWindow):
         # 3 - Seção Navegadores
         main_layout.addWidget(QLabel("3 - Caches de navegadores"))
         
-        cb6 = QCheckBox("Google Chrome")
-        cb7 = QCheckBox("Opera")
-        main_layout.addWidget(cb6)
-        main_layout.addWidget(cb7)
+        for opt in FOLDER_OPTIONS[2]:
+            cb = QCheckBox(opt["label"])
+            cb.setToolTip(opt["tooltip"])
+            self.checkboxpaths[cb] = opt["path"]
+            main_layout.addWidget(cb)
         
         self.addSeparator(main_layout)
         
         
-        # Checkoxes ToolTips
-        cb1.setToolTip("%SystemRoot%/Temp \nArquivos temporários gerados por serviços do sistema e drivers.")
-        cb2.setToolTip("%USERPROFILE%/AppData/Local/Temp \nCache de aplicativos, instaladores descompactados, relatórios de travamento.")
-        cb3.setToolTip("%SystemRoot%/SystemTemp \nTemporários estritos do usuário corporativo/SYSTEM.")
-        
-        cb4.setToolTip("%SystemRoot%/SoftwareDistribution/Download \nArquivos de instalação antigos do Windows Update após as atualizações já terem sido aplicadas.")
-        cb5.setToolTip("%SystemRoot%/Prefetch \nDados de otimização de inicialização de apps. Fará com que os apps demorem um segundo a mais para abrir na primeira vez após a limpeza.")
-        
-        cb6.setToolTip("%USERPROFILE%/AppData/Local/Google/Chrome/User Data/Default/Cache")
-        cb7.setToolTip("%USERPROFILE%/AppData/Local/Opera Software/Opera Stable/Cache")
-        
-        
         btn = QPushButton("Começar Limpeza")
         btn.setFixedHeight(30)
-        
         main_layout.addWidget(btn)
+    
     
     def addSeparator(self, parent, line_size=1, spacing_top=5, spacing_bottom=5):
         sep = QFrame(
