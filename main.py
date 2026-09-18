@@ -13,6 +13,7 @@ class MainWindow(QMainWindow):
         
         self.checkboxpaths = {}
         self.selected = []
+        self.selected_paths = []
         
         container = QWidget()
         self.setCentralWidget(container)
@@ -56,10 +57,9 @@ class MainWindow(QMainWindow):
         
         self.addSeparator(main_layout)
         
-        
         btn = QPushButton("Começar Limpeza")
         btn.setFixedHeight(30)
-        btn.clicked.connect(lambda: print(self.selected))
+        btn.clicked.connect(lambda: self.execute_cleanup(self.selected_paths))
         main_layout.addWidget(btn)
     
     
@@ -78,11 +78,27 @@ class MainWindow(QMainWindow):
     def add_if_checked(self, checkbox):
         if checkbox.isChecked():
             self.selected.append(checkbox)
+            self.selected_paths.append(self.checkboxpaths[checkbox])
         else:
             try:
                 self.selected.remove(checkbox)
+                self.selected_paths.remove(self.checkboxpaths[checkbox])
             except ValueError:
                 pass
+    
+    def clear_folder(self, path:Path):
+        for item in path.iterdir():
+            try:
+                if item.is_dir():
+                    shutil.rmtree(item)
+                else:
+                    item.unlink()
+            except (PermissionError, OSError) as e:
+                print(f"Erro ao excluir {path}: {e}")
+    
+    def execute_cleanup(self, paths:list[Path]):
+        for path in paths:
+            self.clear_folder(path)
 
  
 if __name__ == "__main__":
