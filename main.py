@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QCheckBox, QPushButton,QVBoxLayout, QHBoxLayout, QWidget, QFrame
 from PySide6.QtCore import Qt
 from pathlib import Path
-import os, shutil
+import shutil
 from folder_options import FOLDER_OPTIONS
 
 class MainWindow(QMainWindow):
@@ -12,6 +12,7 @@ class MainWindow(QMainWindow):
         self.setFixedSize(300, 410)
         
         self.checkboxpaths = {}
+        self.selected = []
         
         container = QWidget()
         self.setCentralWidget(container)
@@ -24,6 +25,7 @@ class MainWindow(QMainWindow):
             cb = QCheckBox(opt["label"])
             cb.setToolTip(opt["tooltip"])
             self.checkboxpaths[cb] = opt["path"]
+            cb.toggled.connect(lambda _, cb=cb: self.add_if_checked(cb))
             main_layout.addWidget(cb)
         
         self.addSeparator(main_layout)
@@ -36,6 +38,7 @@ class MainWindow(QMainWindow):
             cb = QCheckBox(opt["label"])
             cb.setToolTip(opt["tooltip"])
             self.checkboxpaths[cb] = opt["path"]
+            cb.toggled.connect(lambda _, cb=cb: self.add_if_checked(cb))
             main_layout.addWidget(cb)
         
         self.addSeparator(main_layout)
@@ -48,6 +51,7 @@ class MainWindow(QMainWindow):
             cb = QCheckBox(opt["label"])
             cb.setToolTip(opt["tooltip"])
             self.checkboxpaths[cb] = opt["path"]
+            cb.toggled.connect(lambda _, cb=cb: self.add_if_checked(cb))
             main_layout.addWidget(cb)
         
         self.addSeparator(main_layout)
@@ -55,6 +59,7 @@ class MainWindow(QMainWindow):
         
         btn = QPushButton("Começar Limpeza")
         btn.setFixedHeight(30)
+        btn.clicked.connect(lambda: print(self.selected))
         main_layout.addWidget(btn)
     
     
@@ -68,6 +73,16 @@ class MainWindow(QMainWindow):
         parent.addSpacing(spacing_top)
         parent.addWidget(sep)
         parent.addSpacing(spacing_bottom)
+    
+    
+    def add_if_checked(self, checkbox):
+        if checkbox.isChecked():
+            self.selected.append(checkbox)
+        else:
+            try:
+                self.selected.remove(checkbox)
+            except ValueError:
+                pass
 
  
 if __name__ == "__main__":
