@@ -3,6 +3,13 @@ from PySide6.QtCore import Qt
 from pathlib import Path
 import shutil
 from folder_options import FOLDER_OPTIONS
+import logging
+
+logging.basicConfig(
+    filename="cleanup.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -12,8 +19,6 @@ class MainWindow(QMainWindow):
         self.setFixedSize(300, 410)
         
         self.checkboxpaths = {}
-        self.selected = []
-        self.selected_paths = []
         
         container = QWidget()
         self.setCentralWidget(container)
@@ -26,7 +31,6 @@ class MainWindow(QMainWindow):
             cb = QCheckBox(opt["label"])
             cb.setToolTip(opt["tooltip"])
             self.checkboxpaths[cb] = opt["path"]
-            cb.toggled.connect(lambda _, cb=cb: self.add_if_checked(cb))
             main_layout.addWidget(cb)
         
         self.addSeparator(main_layout)
@@ -39,7 +43,6 @@ class MainWindow(QMainWindow):
             cb = QCheckBox(opt["label"])
             cb.setToolTip(opt["tooltip"])
             self.checkboxpaths[cb] = opt["path"]
-            cb.toggled.connect(lambda _, cb=cb: self.add_if_checked(cb))
             main_layout.addWidget(cb)
         
         self.addSeparator(main_layout)
@@ -52,14 +55,13 @@ class MainWindow(QMainWindow):
             cb = QCheckBox(opt["label"])
             cb.setToolTip(opt["tooltip"])
             self.checkboxpaths[cb] = opt["path"]
-            cb.toggled.connect(lambda _, cb=cb: self.add_if_checked(cb))
             main_layout.addWidget(cb)
         
         self.addSeparator(main_layout)
         
         btn = QPushButton("Começar Limpeza")
         btn.setFixedHeight(30)
-        btn.clicked.connect(lambda: self.execute_cleanup(self.selected_paths))
+        btn.clicked.connect(self.execute_cleanup)
         main_layout.addWidget(btn)
     
     
@@ -74,18 +76,6 @@ class MainWindow(QMainWindow):
         parent.addWidget(sep)
         parent.addSpacing(spacing_bottom)
     
-    
-    def add_if_checked(self, checkbox):
-        if checkbox.isChecked():
-            self.selected.append(checkbox)
-            self.selected_paths.append(self.checkboxpaths[checkbox])
-        else:
-            try:
-                self.selected.remove(checkbox)
-                self.selected_paths.remove(self.checkboxpaths[checkbox])
-            except ValueError:
-                pass
-    
     def clear_folder(self, path:Path):
         for item in path.iterdir():
             try:
@@ -94,11 +84,12 @@ class MainWindow(QMainWindow):
                 else:
                     item.unlink()
             except (PermissionError, OSError) as e:
-                print(f"Erro ao excluir {path}: {e}")
+                logging.info(f"Falha ao excluir {item}: {e}")
     
-    def execute_cleanup(self, paths:list[Path]):
-        for path in paths:
-            self.clear_folder(path)
+    def execute_cleanup(self):
+        for checkbox, path in self.checkboxpaths.items():
+            if checkbox.isChecked():
+                self.clear_folder(path)
 
  
 if __name__ == "__main__":
