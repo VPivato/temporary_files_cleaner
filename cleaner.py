@@ -84,7 +84,19 @@ class Cleaner:
             return result
         
         # Faz a requisição de elevação apenas após a limpeza dos diretórios não admin, e se o processo ainda não estiver elevado.
-        admin_request = request_admin_privileges(self.logger)
+        extra_args = [
+            "--elevated",
+            "--cleaned_count",
+            str(result.cleaned_count),
+            "--failed_count",
+            str(result.failed_count),
+            "--failed_reason",
+            str(result.failed_reason),
+            "--cleanup",
+            *[str(path) for path in admin_only]
+        ]
+        admin_request = request_admin_privileges(self.logger, extra_args)
+        
         result.elevation_requested = True
         result.elevation_granted = admin_request
         if not result.elevation_granted:
