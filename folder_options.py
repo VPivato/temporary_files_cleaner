@@ -35,7 +35,7 @@ FOLDER_OPTIONS = [
     ],
     [
         item(
-            label="SoftwareDistribution",
+            label="SoftwareDistribution/Download",
             path=Path(SYSTEMROOT) / "SoftwareDistribution" / "Download",
             tooltip="Arquivos temporários e caches do Windows Update.",
             requires_admin=True

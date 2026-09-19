@@ -103,21 +103,50 @@ class MainWindow(QMainWindow):
         parent.addSpacing(spacing_bottom)
     
     def clear_folder(self, path:Path):
-        for item in path.iterdir():
+        if not path.exists():
+            logger.warning(f"Diretório inexistente, ignorando: {path}")
+            return
+        try:
+            entries = list(path.iterdir())
+        except OSError as e:
+            logger.warning(f"Não foi possível acessar {path}: {e}")
+            return
+        
+        for item in entries:
             try:
                 if item.is_dir():
                     shutil.rmtree(item)
                 else:
                     item.unlink()
             except (PermissionError, OSError) as e:
-                logger.warning(f"Falha ao excluir {item}: {e}")
+                logger.warning(f"Erro ao excluir {item}: {e}")
     
     def execute_cleanup(self):
-        for checkbox, (path, requires_admin) in self.checkboxpaths.items():
-            if checkbox.isChecked():
-                if requires_admin and not is_admin():
-                    self.request_admin_privileges()
-                self.clear_folder(path)
+        adm_count = 0
+        for checkbox, (_, requires_admin) in self.checkboxpaths.items():
+            if checkbox.isChecked() and requires_admin:
+                adm_count += 1
+        
+        if adm_count > 0 and not is_admin():
+            try:
+                success = self.request_admin_privileges()
+                if success:
+                    logger.info("Sucesso ao elevar processo.")
+                    QApplication.quit()
+                    sys.exit()
+                else:
+                    logger.warning("Falha ao elevar processo.")
+                    return
+            except Exception as e:
+                logger.error(f"Erro no processo de elevação: {e}")
+        
+        try:
+            for checkbox, (path, requires_admin) in self.checkboxpaths.items():
+                if checkbox.isChecked():
+                    logger.info(f"Limpando diretório: {path}")
+                    self.clear_folder(path)
+        except (PermissionError, OSError) as e:
+            logger.warning(f"Erro: {e}")
     
     def request_admin_privileges(self):
         if is_admin():
@@ -127,9 +156,9 @@ class MainWindow(QMainWindow):
                 result = ctypes.windll.shell32.ShellExecuteW(None, "runas", get_pythonw(), subprocess.list2cmdline(sys.argv), None, 1)
                 if result > 32:
                     logger.info("Iniciado: processo com privilegios de administrador")
-                    sys.exit()
+                    return True
                 else:
-                    logger.error(f"Não iniciado: processo com privilegios de administrador")
+                    logger.warning("Não iniciado: processo com privilegios de administrador")
                     return False
             except Exception as e:
                 logger.error(f"Erro ao soliticar elevação - {e}")
