@@ -1,9 +1,9 @@
-from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QCheckBox, QPushButton,QVBoxLayout, QHBoxLayout, QWidget, QFrame
-from PySide6.QtCore import Qt
+import logging, os, sys
 from pathlib import Path
-import shutil, logging, os, ctypes, sys, subprocess
-from logging.handlers import RotatingFileHandler
+from cleaner import Cleaner
 from folder_options import FOLDER_OPTIONS
+from logging.handlers import RotatingFileHandler
+from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QCheckBox, QPushButton,QVBoxLayout, QWidget, QFrame
 
 log_dir = Path(os.environ["LOCALAPPDATA"]) / "TemporaryFilesCleaner"
 log_dir.mkdir(parents=True, exist_ok=True)
@@ -20,22 +20,7 @@ logger = logging.getLogger(__name__)
 logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 
-def is_admin():
-    try:
-        return ctypes.windll.shell32.IsUserAnAdmin()
-    except:
-        return False
-
-def get_pythonw():
-    """pythonw.exe para não exibir um terminal ao relançar o processo com privilégios de administrador"""
-    
-    pythonw = Path(sys.executable).with_name("pythonw.exe")
-    
-    if pythonw.exists():
-        return str(pythonw)
-    
-    return sys.executable
-
+cleaner = Cleaner(logger)
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -85,9 +70,15 @@ class MainWindow(QMainWindow):
         
         self.addSeparator(main_layout)
         
+        
         btn = QPushButton("Começar Limpeza")
         btn.setFixedHeight(30)
-        btn.clicked.connect(self.execute_cleanup)
+        
+        btn.clicked.connect(lambda: self.clean(
+            paths=[path for cb, (path, _) in self.checkboxpaths.items() if cb.isChecked()],
+            requires_admin=[requires_admin for cb, (_, requires_admin) in self.checkboxpaths.items() if cb.isChecked()]
+        ))
+        
         main_layout.addWidget(btn)
     
     
@@ -102,58 +93,11 @@ class MainWindow(QMainWindow):
         parent.addWidget(sep)
         parent.addSpacing(spacing_bottom)
     
-    def clear_folder(self, path:Path):
-        if not path.exists():
-            logger.warning(f"Diretório inexistente, ignorando: {path}")
-            return
-        try:
-            entries = list(path.iterdir())
-        except OSError as e:
-            logger.warning(f"Não foi possível acessar {path}: {e}")
-            return
-        
-        for item in entries:
-            try:
-                if item.is_dir():
-                    shutil.rmtree(item)
-                else:
-                    item.unlink()
-            except (PermissionError, OSError) as e:
-                logger.warning(f"Erro ao excluir {item}: {e}")
-    
-    def execute_cleanup(self):
-        if any(requires_admin for cb, (_, requires_admin) in self.checkboxpaths.items() if cb.isChecked()) and not is_admin():
-            success = self.request_admin_privileges()
-            if success:
-                logger.info("Sucesso ao elevar processo.")
-                QApplication.quit()
-                sys.exit()
-            else:
-                logger.warning("Falha ao elevar processo.")
-                return
-        
-        for checkbox, (path, _) in self.checkboxpaths.items():
-            if checkbox.isChecked():
-                logger.info(f"Limpando diretório: {path}")
-                try:
-                    self.clear_folder(path)
-                except (PermissionError, OSError) as e:
-                    logger.warning(f"Erro ao processar {path}: {e}")
-    
-    def request_admin_privileges(self):
-        if is_admin():
-            return
-        else:
-            try:
-                result = ctypes.windll.shell32.ShellExecuteW(None, "runas", get_pythonw(), subprocess.list2cmdline(sys.argv), None, 1)
-                if result > 32:
-                    logger.info("Iniciado: processo com privilegios de administrador")
-                    return True
-                else:
-                    logger.warning("Não iniciado: processo com privilegios de administrador")
-                    return False
-            except Exception as e:
-                logger.error(f"Erro ao soliticar elevação - {e}")
+    def clean(self, paths, requires_admin):
+        reopened_with_admin = cleaner.execute_cleanup(paths, requires_admin)
+        if reopened_with_admin:
+            QApplication.quit()
+            sys.exit()
 
  
 if __name__ == "__main__":
