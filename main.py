@@ -1,3 +1,4 @@
+import json
 import logging, os, sys
 from pathlib import Path
 from cleaner import Cleaner
@@ -75,7 +76,7 @@ class MainWindow(QMainWindow):
         btn = QPushButton("Começar Limpeza")
         btn.setFixedHeight(30)
         
-        btn.clicked.connect(lambda: self.clean(self.get_checked()))
+        btn.clicked.connect(self.clean)
         
         main_layout.addWidget(btn)
     
@@ -92,23 +93,27 @@ class MainWindow(QMainWindow):
         parent.addSpacing(spacing_bottom)
     
     def get_checked(self):
-        checked = [(cb, path, req_adm) for cb, (path, req_adm) in self.checkboxpaths.items() if cb.isChecked()]
+        checked = [(path, req_adm) for cb, (path, req_adm) in self.checkboxpaths.items() if cb.isChecked()]
         return checked
     
-    def clean(self, checked:list):
-        paths = [path for (_, path, _) in checked]
-        requires_admin = [req_adm for (_, _, req_adm) in checked]
-        
-        result = cleaner.execute_cleanup(paths, requires_admin)
+    def clean(self):
+        result = cleaner.execute_cleanup(self.get_checked())
         if result.elevation_requested and result.elevation_granted:
             QApplication.quit()
             sys.exit()
         
-        logger.info(f"Sucesso ao limpar: {result.cleaned_count} \nFalha: {result.failed_count}")
+        logger.info(f"Sucesso ao limpar: {result.cleaned_count} Falha: {result.failed_count}")
         msg = QMessageBox(self)
         msg.setText(f"Sucesso ao limpar: {result.cleaned_count} \nFalha: {result.failed_count}")
-        msg.setDetailedText(str(result.failed_reason))
+        msg.setDetailedText(format_message(result.failed_reason))
         msg.exec()
+
+def format_message(*dicts):
+    msg = ""
+    for d in dicts:
+        for k, v in d.items():
+            msg += f"{k}: {v} \n"
+    return msg
 
  
 if __name__ == "__main__":
@@ -118,12 +123,14 @@ if __name__ == "__main__":
     if not args.elevated:
         win = MainWindow()
         win.show()
+        sys.exit(app.exec())
     else:
-        result = cleaner.execute_cleanup([Path(p) for p in args.cleanup], [True for _ in range(len(args.cleanup))])
+        data = [(Path(p), True) for p in args.cleanup]
+        result = cleaner.execute_cleanup(data)
         msg = QMessageBox()
         msg.setText(f"Sucesso ao limpar: {result.cleaned_count + int(args.cleaned_count)} \nFalha: {result.failed_count + int(args.failed_count)}")
-        msg.setDetailedText(str(args.failed_reason))
+        failed_reason = json.loads(args.failed_reason)
+        msg.setDetailedText(format_message(failed_reason, result.failed_reason))
         msg.exec()
-    
-    app.exec()
+        sys.exit(0)
         
