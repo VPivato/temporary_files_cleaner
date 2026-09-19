@@ -74,10 +74,7 @@ class MainWindow(QMainWindow):
         btn = QPushButton("Começar Limpeza")
         btn.setFixedHeight(30)
         
-        btn.clicked.connect(lambda: self.clean(
-            paths=[path for cb, (path, _) in self.checkboxpaths.items() if cb.isChecked()],
-            requires_admin=[requires_admin for cb, (_, requires_admin) in self.checkboxpaths.items() if cb.isChecked()]
-        ))
+        btn.clicked.connect(lambda: self.clean(self.get_checked()))
         
         main_layout.addWidget(btn)
     
@@ -93,11 +90,21 @@ class MainWindow(QMainWindow):
         parent.addWidget(sep)
         parent.addSpacing(spacing_bottom)
     
-    def clean(self, paths, requires_admin):
+    def get_checked(self):
+        checked = [(cb, path, req_adm) for cb, (path, req_adm) in self.checkboxpaths.items() if cb.isChecked()]
+        return checked
+    
+    def clean(self, checked:list):
+        paths = [path for (_, path, _) in checked]
+        requires_admin = [req_adm for (_, _, req_adm) in checked]
+        
         reopened_with_admin = cleaner.execute_cleanup(paths, requires_admin)
         if reopened_with_admin:
             QApplication.quit()
             sys.exit()
+        
+        if reopened_with_admin == None:
+            logger.info("Limpeza concluída.")
 
  
 if __name__ == "__main__":

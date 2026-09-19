@@ -14,7 +14,7 @@ def get_pythonw():
 
 def is_admin():
     try:
-        return ctypes.windll.shell32.IsUserAnAdmin()
+        return bool(ctypes.windll.shell32.IsUserAnAdmin())
     except:
         return False
 
@@ -23,7 +23,7 @@ def request_admin_privileges(logger:Logger):
             return
         else:
             try:
-                result = ctypes.windll.shell32.ShellExecuteW(None, "runas", get_pythonw(), subprocess.list2cmdline(sys.argv), None, 1)
+                result = ctypes.windll.shell32.ShellExecuteW(None, "runas", get_pythonw(), subprocess.list2cmdline(sys.argv), str(Path(__file__).resolve().parent), 1)
                 if result > 32:
                     logger.info("Iniciado: processo com privilegios de administrador")
                     return True
