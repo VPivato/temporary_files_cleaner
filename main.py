@@ -3,7 +3,7 @@ from pathlib import Path
 from cleaner import Cleaner
 from folder_options import FOLDER_OPTIONS
 from logging.handlers import RotatingFileHandler
-from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QCheckBox, QPushButton,QVBoxLayout, QWidget, QFrame
+from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QCheckBox, QPushButton,QVBoxLayout, QWidget, QFrame, QMessageBox
 
 log_dir = Path(os.environ["LOCALAPPDATA"]) / "TemporaryFilesCleaner"
 log_dir.mkdir(parents=True, exist_ok=True)
@@ -98,13 +98,16 @@ class MainWindow(QMainWindow):
         paths = [path for (_, path, _) in checked]
         requires_admin = [req_adm for (_, _, req_adm) in checked]
         
-        reopened_with_admin = cleaner.execute_cleanup(paths, requires_admin)
-        if reopened_with_admin:
+        result = cleaner.execute_cleanup(paths, requires_admin)
+        if result.elevation_requested and result.elevation_granted:
             QApplication.quit()
             sys.exit()
         
-        if reopened_with_admin == None:
-            logger.info("Limpeza concluída.")
+        logger.info(f"Sucesso ao limpar: {result.cleaned_count} \nFalha: {result.failed_count}")
+        msg = QMessageBox(self)
+        msg.setText(f"Sucesso ao limpar: {result.cleaned_count} \nFalha: {result.failed_count}")
+        msg.setDetailedText(str(result.failed_reason))
+        msg.exec()
 
  
 if __name__ == "__main__":

@@ -1,7 +1,17 @@
 import shutil
 from pathlib import Path 
 from logging import Logger
+from dataclasses import dataclass
 from admin import is_admin, request_admin_privileges
+
+@dataclass
+class CleanupResult:
+    cleaned_count: int
+    failed_count: int
+    elevation_requested: bool
+    elevation_granted: bool | None
+    failed_reason: dict[Path, str]
+
 
 class Cleaner:
     def __init__(self, logger:Logger):
@@ -10,13 +20,13 @@ class Cleaner:
     def clear_folder(self, path:Path):
         if not path.exists():
             self.logger.warning(f"Diretório inexistente, ignorando: {path}")
-            return
+            return False
         
         try:
             entries = list(path.iterdir())
         except OSError as e:
             self.logger.warning(f"Não foi possível acessar {path}: {e}")
-            return
+            return False
 
         for item in entries:
             try:
@@ -26,33 +36,60 @@ class Cleaner:
                     item.unlink()
             except (PermissionError, OSError) as e:
                 self.logger.warning(f"Erro ao excluir {item}: {e}")
+        
+        return True
     
-    def execute_cleanup(self, paths:list[Path], requires_admin:list[bool]) -> bool | None:
+    def execute_cleanup(self, paths:list[Path], requires_admin:list[bool]) -> CleanupResult:
         non_admin = [p for p, adm in zip(paths, requires_admin) if not adm]
         admin_only = [p for p, adm in zip(paths, requires_admin) if adm]
+        
+        result = CleanupResult(
+            cleaned_count = 0,
+            failed_count = 0,
+            elevation_requested=False,
+            elevation_granted=None,
+            failed_reason={}
+        )
         
         # Limpa todos diretórios não-admin antes de pedir elevação
         for path in non_admin:
             self.logger.info(f"Limpando diretório: {path}")
             try:
-                self.clear_folder(path)
+                success = self.clear_folder(path)
+                if success:
+                    result.cleaned_count += 1
+                else:
+                    result.failed_count += 1
+                    result.failed_reason[path] = "Diretório inexistente ou não foi possível acessar."
             except (PermissionError, OSError) as e:
                 self.logger.warning(f"Erro ao processar {path}: {e}")
         
         # Finaliza se não houver nenhum diretório admin
         if not admin_only:
-            return
+            return result
         
         # Limpa os diretórios admin se o processo estiver elevado
         if is_admin():
             for path in admin_only:
                 self.logger.info(f"Limpando diretório: {path}")
                 try:
-                    self.clear_folder(path)
+                    success = self.clear_folder(path)
+                    if success:
+                        result.cleaned_count += 1
+                    else:
+                        result.failed_count += 1
+                        result.failed_reason[path] = "Diretório inexistente ou não foi possível acessar."
                 except (PermissionError, OSError) as e:
                     self.logger.warning(f"Erro ao processar {path}: {e}")
-            return
+            return result
         
         # Faz a requisição de elevação apenas após a limpeza dos diretórios não admin, e se o processo ainda não estiver elevado.
-        return request_admin_privileges(self.logger)
+        admin_request = request_admin_privileges(self.logger)
+        result.elevation_requested = True
+        result.elevation_granted = admin_request
+        if not result.elevation_granted:
+            result.failed_count += len(admin_only)
+            for path in admin_only:
+                result.failed_reason[path] = "Privilégios de administrador negados."
+        return result
         
