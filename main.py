@@ -122,31 +122,23 @@ class MainWindow(QMainWindow):
                 logger.warning(f"Erro ao excluir {item}: {e}")
     
     def execute_cleanup(self):
-        adm_count = 0
-        for checkbox, (_, requires_admin) in self.checkboxpaths.items():
-            if checkbox.isChecked() and requires_admin:
-                adm_count += 1
+        if any(requires_admin for cb, (_, requires_admin) in self.checkboxpaths.items() if cb.isChecked()) and not is_admin():
+            success = self.request_admin_privileges()
+            if success:
+                logger.info("Sucesso ao elevar processo.")
+                QApplication.quit()
+                sys.exit()
+            else:
+                logger.warning("Falha ao elevar processo.")
+                return
         
-        if adm_count > 0 and not is_admin():
-            try:
-                success = self.request_admin_privileges()
-                if success:
-                    logger.info("Sucesso ao elevar processo.")
-                    QApplication.quit()
-                    sys.exit()
-                else:
-                    logger.warning("Falha ao elevar processo.")
-                    return
-            except Exception as e:
-                logger.error(f"Erro no processo de elevação: {e}")
-        
-        try:
-            for checkbox, (path, requires_admin) in self.checkboxpaths.items():
-                if checkbox.isChecked():
-                    logger.info(f"Limpando diretório: {path}")
+        for checkbox, (path, _) in self.checkboxpaths.items():
+            if checkbox.isChecked():
+                logger.info(f"Limpando diretório: {path}")
+                try:
                     self.clear_folder(path)
-        except (PermissionError, OSError) as e:
-            logger.warning(f"Erro: {e}")
+                except (PermissionError, OSError) as e:
+                    logger.warning(f"Erro ao processar {path}: {e}")
     
     def request_admin_privileges(self):
         if is_admin():
