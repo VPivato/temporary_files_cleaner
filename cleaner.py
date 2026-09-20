@@ -75,6 +75,7 @@ class Cleaner:
         # Limpa os diretórios admin se o processo estiver elevado
         if is_admin():
             self._clear_batch(admin_only, result)
+            return result
         
         # Faz a requisição de elevação apenas após a limpeza dos diretórios não admin, e se o processo ainda não estiver elevado.
         extra_args = [
