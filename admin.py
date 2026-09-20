@@ -1,52 +1,7 @@
 from pathlib import Path
 from logging import Logger
-import sys, ctypes, subprocess, argparse
-
-def get_pythonw():
-    """pythonw.exe para não exibir um terminal ao relançar o processo com privilégios de administrador"""
-    
-    pythonw = Path(sys.executable).with_name("pythonw.exe")
-    
-    if pythonw.exists():
-        return str(pythonw)
-    
-    return sys.executable
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    
-    parser.add_argument(
-        "--elevated",
-        action="store_true"
-    )
-    
-    parser.add_argument(
-        "--cleaned_count",
-        type=str
-    )
-    
-    parser.add_argument(
-        "--freed_bytes",
-        type=str
-    )
-    
-    parser.add_argument(
-        "--failed_count",
-        type=str
-    )
-    
-    parser.add_argument(
-        "--failed_reason",
-        type=str
-    )
-    
-    parser.add_argument(
-        "--cleanup",
-        nargs="+",
-        type=str
-    )
-    
-    return parser.parse_args()
+from utils import get_pythonw
+import sys, ctypes, subprocess
 
 def is_admin():
     try:

@@ -1,5 +1,4 @@
 import json
-import shutil
 from pathlib import Path 
 from logging import Logger
 from dataclasses import dataclass
@@ -20,6 +19,15 @@ class Cleaner:
         self.logger = logger
     
     def clear_folder(self, path:Path) -> tuple[bool, int]:
+        """Limpa o diretório designado arquivo por arquivo usando a função recursiva _remove_tree().
+        
+        Args:
+            path: Objeto pathlib.Path representando o diretório a ser esvaziado.
+        
+        Returns:
+            (bool, freed_bytes): Booleano representando se a operação foi bem sucedida, número inteiro expressando quantos bytes foram excluidos.
+        """
+        
         if not path.exists():
             self.logger.warning(f"Diretório inexistente, ignorando: {path}")
             return False, 0
@@ -46,7 +54,15 @@ class Cleaner:
         
         return True, freed_bytes
     
-    def _clear_batch(self, paths:list[Path], result:CleanupResult):
+    
+    def _clear_batch(self, paths:list[Path], result:CleanupResult) -> None:
+        """Chama a função clear_folder para uma lista de pathlib.Path e atualiza as variáveis do CleanupResult especificado.
+        
+        Args:
+            paths: Lista de objetos pathlib.Path. São os diretórios a serem limpos.
+            result: Objeto CleanupResult. Variáveis como cleaned_count e failed_count são incrementadas durante a limpeza.
+        """
+        
         for path in paths:
             self.logger.info(f"Limpando diretório: {path}")
             try:
@@ -60,7 +76,17 @@ class Cleaner:
             except (PermissionError, OSError) as e:
                 self.logger.warning(f"Erro ao processar {path}: {e}")
     
+    
     def _remove_tree(self, path:Path) -> int:
+        """Função recursiva que remove (unlink) arquivo por arquivo até esvaziar o diretório especificado.
+        
+        Args:
+            path: Objeto pathlib.Path, o diretório a ser limpo.
+        
+        Returns:
+            freed_bytes: valor inteiro representado quantos bytes foram excluidos.        
+        """
+        
         freed_bytes = 0
         
         for item in path.iterdir():
@@ -77,7 +103,19 @@ class Cleaner:
         
         return freed_bytes
     
+    
     def execute_cleanup(self, data:list[tuple[Path, bool]]) -> CleanupResult:
+        """Com base na lista de diretórios e booleanos fornecida, chama _clear_batch após separar os caminhos entre admin e não-admin.
+        Caso haja a necessidade de privilégios de administrador e o processo não estiver elevado, envia uma requisição ao usuário
+        via 'ctypes.windll.shell32.ShellExecuteW'.
+        
+        Args:
+            data: Lista de tuplas (path, requires_admin), o valor booleano é usado para separar entre pastas admin e não-admin.
+        
+        Returns:
+            Objeto CleanupResult contendo variáveis como cleaned_count, failed_count, freed_bytes...
+        """
+        
         non_admin = [p for p, adm in data if not adm]
         admin_only = [p for p, adm in data if adm]
         

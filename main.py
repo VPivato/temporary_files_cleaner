@@ -1,26 +1,13 @@
-import json
-import logging, os, sys
+import json, sys
 from pathlib import Path
+from logger import logger
 from cleaner import Cleaner
+from utils import parse_args
+from PySide6.QtGui import QIcon
 from folder_options import FOLDER_OPTIONS
-from logging.handlers import RotatingFileHandler
+from utils import format_message, bytes_to_mib
 from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QCheckBox, QPushButton,QVBoxLayout, QWidget, QFrame, QMessageBox
-from admin import parse_args
 
-log_dir = Path(os.environ["LOCALAPPDATA"]) / "TemporaryFilesCleaner"
-log_dir.mkdir(parents=True, exist_ok=True)
-
-handler = RotatingFileHandler(
-    filename=log_dir / "cleanup.log",
-    maxBytes=1024 * 1024, # 1 MiB
-    backupCount=2
-)
-handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
-handler.setLevel(logging.INFO)
-
-logger = logging.getLogger(__name__)
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
 
 cleaner = Cleaner(logger)
 
@@ -29,6 +16,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         
         self.setWindowTitle("Arquivos Temporários")
+        self.setWindowIcon(QIcon("icon.png"))
         self.setFixedSize(300, 410)
         
         self.checkboxpaths = {}
@@ -104,19 +92,11 @@ class MainWindow(QMainWindow):
         
         logger.info(f"Sucesso ao limpar: {result.cleaned_count} Falha: {result.failed_count}")
         msg = QMessageBox(self)
+        msg.setWindowTitle("Arquivos Temporários")
         msg.setText(f"Sucesso ao limpar: {result.cleaned_count} \nFalha: {result.failed_count} \n{bytes_to_mib(result.freed_bytes)} Mib limpos.")
         msg.setDetailedText(format_message(result.failed_reason))
         msg.exec()
 
-def format_message(*dicts):
-    msg = ""
-    for d in dicts:
-        for k, v in d.items():
-            msg += f"{k}: {v} \n"
-    return msg
-
-def bytes_to_mib(*args, decimal_places=2):
-    return round(sum(args) / 1024 / 1024, decimal_places)
  
 if __name__ == "__main__":
     app = QApplication()
@@ -130,6 +110,7 @@ if __name__ == "__main__":
         data = [(Path(p), True) for p in args.cleanup]
         result = cleaner.execute_cleanup(data)
         msg = QMessageBox()
+        msg.setWindowTitle("Arquivos Temporários")
         msg.setText(f"Sucesso ao limpar: {result.cleaned_count + int(args.cleaned_count)}\nFalha: {result.failed_count + int(args.failed_count)} \n{bytes_to_mib(result.freed_bytes, int(args.freed_bytes))} Mib limpos.")
         failed_reason = json.loads(args.failed_reason)
         msg.setDetailedText(format_message(failed_reason, result.failed_reason))
