@@ -22,10 +22,10 @@ class Cleaner:
         """Limpa o diretório designado arquivo por arquivo usando a função recursiva _remove_tree().
         
         Args:
-            path: Objeto pathlib.Path representando o diretório a ser esvaziado.
+            path: objeto pathlib.Path representando o diretório a ser esvaziado.
         
         Returns:
-            (bool, freed_bytes): Booleano representando se a operação foi bem sucedida, número inteiro expressando quantos bytes foram excluidos.
+            (bool, freed_bytes): booleano representando se a operação foi bem sucedida, número inteiro expressando quantos bytes foram excluidos.
         """
         
         if not path.exists():
@@ -61,8 +61,8 @@ class Cleaner:
         """Chama a função clear_folder para uma lista de pathlib.Path e atualiza as variáveis do CleanupResult especificado.
         
         Args:
-            paths: Lista de objetos pathlib.Path. São os diretórios a serem limpos.
-            result: Objeto CleanupResult. Variáveis como cleaned_count e failed_count são incrementadas durante a limpeza.
+            paths: lista de objetos pathlib.Path. São os diretórios a serem limpos.
+            result: objeto CleanupResult. Variáveis como cleaned_count e failed_count são incrementadas durante a limpeza.
         """
         
         for path in paths:
@@ -83,7 +83,7 @@ class Cleaner:
         """Função recursiva que remove (unlink) arquivo por arquivo até esvaziar o diretório especificado.
         
         Args:
-            path: Objeto pathlib.Path, o diretório a ser limpo.
+            path: objeto pathlib.Path, o diretório a ser limpo.
         
         Returns:
             freed_bytes: valor inteiro representado quantos bytes foram excluidos.        
@@ -112,7 +112,7 @@ class Cleaner:
         via 'ctypes.windll.shell32.ShellExecuteW'.
         
         Args:
-            data: Lista de tuplas (path, requires_admin), o valor booleano é usado para separar entre pastas admin e não-admin.
+            data: lista de tuplas (path, requires_admin), o valor booleano é usado para separar entre pastas admin e não-admin.
         
         Returns:
             Objeto CleanupResult contendo variáveis como cleaned_count, failed_count, freed_bytes...

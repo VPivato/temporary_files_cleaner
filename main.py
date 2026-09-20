@@ -8,7 +8,7 @@ from folder_options import FOLDER_OPTIONS
 from utils import format_message, bytes_to_mib
 from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QCheckBox, QPushButton,QVBoxLayout, QWidget, QFrame, QMessageBox
 
-ICON_PATH = Path(__file__).resolve().parent / "icon.png"
+ICON_PATH = Path(__file__).resolve().parent / "assets" / "icon.png"
 
 cleaner = Cleaner(logger)
 
@@ -97,6 +97,7 @@ class MainWindow(QMainWindow):
         msg.setText(f"Sucesso ao limpar: {result.cleaned_count} \nFalha: {result.failed_count} \n{bytes_to_mib(result.freed_bytes)} MiB limpos.")
         msg.setDetailedText(format_message(result.failed_reason))
         msg.exec()
+        sys.exit(0)
 
  
 if __name__ == "__main__":
