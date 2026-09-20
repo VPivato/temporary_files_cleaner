@@ -104,7 +104,7 @@ class MainWindow(QMainWindow):
         
         logger.info(f"Sucesso ao limpar: {result.cleaned_count} Falha: {result.failed_count}")
         msg = QMessageBox(self)
-        msg.setText(f"Sucesso ao limpar: {result.cleaned_count} \nFalha: {result.failed_count}")
+        msg.setText(f"Sucesso ao limpar: {result.cleaned_count} \nFalha: {result.failed_count} \n{bytes_to_mib(result.freed_bytes)} Mib limpos.")
         msg.setDetailedText(format_message(result.failed_reason))
         msg.exec()
 
@@ -115,6 +115,8 @@ def format_message(*dicts):
             msg += f"{k}: {v} \n"
     return msg
 
+def bytes_to_mib(*args, decimal_places=2):
+    return round(sum(args) / 1024 / 1024, decimal_places)
  
 if __name__ == "__main__":
     app = QApplication()
@@ -128,7 +130,7 @@ if __name__ == "__main__":
         data = [(Path(p), True) for p in args.cleanup]
         result = cleaner.execute_cleanup(data)
         msg = QMessageBox()
-        msg.setText(f"Sucesso ao limpar: {result.cleaned_count + int(args.cleaned_count)} \nFalha: {result.failed_count + int(args.failed_count)}")
+        msg.setText(f"Sucesso ao limpar: {result.cleaned_count + int(args.cleaned_count)}\nFalha: {result.failed_count + int(args.failed_count)} \n{bytes_to_mib(result.freed_bytes, int(args.freed_bytes))} Mib limpos.")
         failed_reason = json.loads(args.failed_reason)
         msg.setDetailedText(format_message(failed_reason, result.failed_reason))
         msg.exec()

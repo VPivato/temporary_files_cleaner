@@ -26,6 +26,11 @@ def parse_args():
     )
     
     parser.add_argument(
+        "--freed_bytes",
+        type=str
+    )
+    
+    parser.add_argument(
         "--failed_count",
         type=str
     )

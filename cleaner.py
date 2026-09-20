@@ -12,39 +12,46 @@ class CleanupResult:
     elevation_requested: bool
     elevation_granted: bool | None
     failed_reason: dict[Path, str]
+    freed_bytes: int
 
 
 class Cleaner:
     def __init__(self, logger:Logger):
         self.logger = logger
     
-    def clear_folder(self, path:Path):
+    def clear_folder(self, path:Path) -> tuple[bool, int]:
         if not path.exists():
             self.logger.warning(f"Diretório inexistente, ignorando: {path}")
-            return False
+            return False, 0
         
         try:
             entries = list(path.iterdir())
         except OSError as e:
             self.logger.warning(f"Não foi possível acessar {path}: {e}")
-            return False
+            return False, 0
+        
+        freed_bytes = 0
 
         for item in entries:
             try:
                 if item.is_dir():
-                    shutil.rmtree(item)
+                    freed_bytes += self._remove_tree(item)
+                    item.rmdir()
                 else:
+                    size = item.stat().st_size
                     item.unlink()
+                    freed_bytes += size
             except (PermissionError, OSError) as e:
                 self.logger.warning(f"Erro ao excluir {item}: {e}")
         
-        return True
+        return True, freed_bytes
     
     def _clear_batch(self, paths:list[Path], result:CleanupResult):
         for path in paths:
             self.logger.info(f"Limpando diretório: {path}")
             try:
-                success = self.clear_folder(path)
+                success, freed_bytes = self.clear_folder(path)
+                result.freed_bytes += freed_bytes
                 if success:
                     result.cleaned_count += 1
                 else:
@@ -52,6 +59,23 @@ class Cleaner:
                     result.failed_reason[path] = "Diretório inexistente ou não foi possível acessar."
             except (PermissionError, OSError) as e:
                 self.logger.warning(f"Erro ao processar {path}: {e}")
+    
+    def _remove_tree(self, path:Path) -> int:
+        freed_bytes = 0
+        
+        for item in path.iterdir():
+            try:
+                if item.is_dir():
+                    freed_bytes += self._remove_tree(item)
+                    item.rmdir()
+                else:
+                    size = item.stat().st_size
+                    item.unlink()
+                    freed_bytes += size
+            except (PermissionError, OSError) as e:
+                self.logger.warning(f"Erro ao excluir {item}: {e}")
+        
+        return freed_bytes
     
     def execute_cleanup(self, data:list[tuple[Path, bool]]) -> CleanupResult:
         non_admin = [p for p, adm in data if not adm]
@@ -62,7 +86,8 @@ class Cleaner:
             failed_count = 0,
             elevation_requested=False,
             elevation_granted=None,
-            failed_reason={}
+            failed_reason={},
+            freed_bytes=0
         )
         
         # Limpa todos diretórios não-admin antes de pedir elevação
@@ -82,6 +107,8 @@ class Cleaner:
             "--elevated",
             "--cleaned_count",
             str(result.cleaned_count),
+            "--freed_bytes",
+            str(result.freed_bytes),
             "--failed_count",
             str(result.failed_count),
             "--failed_reason",
