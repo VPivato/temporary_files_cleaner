@@ -42,6 +42,8 @@ class Cleaner:
 
         for item in entries:
             try:
+                if item.is_symlink(): # Proteção contra links simólicos, evita limpar pastas que apontem para outro lugar.
+                    item.unlink
                 if item.is_dir():
                     freed_bytes += self._remove_tree(item)
                     item.rmdir()

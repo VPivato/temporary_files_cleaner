@@ -2,12 +2,13 @@ import json, sys
 from pathlib import Path
 from logger import logger
 from cleaner import Cleaner
-from utils import parse_args
+from admin import parse_args
 from PySide6.QtGui import QIcon
 from folder_options import FOLDER_OPTIONS
 from utils import format_message, bytes_to_mib
 from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QCheckBox, QPushButton,QVBoxLayout, QWidget, QFrame, QMessageBox
 
+ICON_PATH = Path(__file__).resolve().parent / "icon.png"
 
 cleaner = Cleaner(logger)
 
@@ -16,7 +17,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         
         self.setWindowTitle("Arquivos Temporários")
-        self.setWindowIcon(QIcon("icon.png"))
+        self.setWindowIcon(QIcon(str(ICON_PATH)))
         self.setFixedSize(300, 410)
         
         self.checkboxpaths = {}
@@ -93,7 +94,7 @@ class MainWindow(QMainWindow):
         logger.info(f"Sucesso ao limpar: {result.cleaned_count} Falha: {result.failed_count}")
         msg = QMessageBox(self)
         msg.setWindowTitle("Arquivos Temporários")
-        msg.setText(f"Sucesso ao limpar: {result.cleaned_count} \nFalha: {result.failed_count} \n{bytes_to_mib(result.freed_bytes)} Mib limpos.")
+        msg.setText(f"Sucesso ao limpar: {result.cleaned_count} \nFalha: {result.failed_count} \n{bytes_to_mib(result.freed_bytes)} MiB limpos.")
         msg.setDetailedText(format_message(result.failed_reason))
         msg.exec()
 
@@ -111,9 +112,8 @@ if __name__ == "__main__":
         result = cleaner.execute_cleanup(data)
         msg = QMessageBox()
         msg.setWindowTitle("Arquivos Temporários")
-        msg.setText(f"Sucesso ao limpar: {result.cleaned_count + int(args.cleaned_count)}\nFalha: {result.failed_count + int(args.failed_count)} \n{bytes_to_mib(result.freed_bytes, int(args.freed_bytes))} Mib limpos.")
+        msg.setText(f"Sucesso ao limpar: {result.cleaned_count + int(args.cleaned_count)}\nFalha: {result.failed_count + int(args.failed_count)} \n{bytes_to_mib(result.freed_bytes, int(args.freed_bytes))} MiB limpos.")
         failed_reason = json.loads(args.failed_reason)
         msg.setDetailedText(format_message(failed_reason, result.failed_reason))
         msg.exec()
         sys.exit(0)
-        
