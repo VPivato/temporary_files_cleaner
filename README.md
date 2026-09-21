@@ -1,16 +1,23 @@
-# Temporary Files Cleaner
+# Temporary Files Cleaner (Windows)
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **Aplicativo para limpeza de diretórios de arquivos temporários no Windows.**
+
 
 <img src="assets/demonstracao.gif" style="width: 750px;" />
 
 (demonstração com arquivos gerados artificialmente)
 
 Bibliotecas centrais usadas:
-- Python `3.14.3`
+- Python `3.10+` (desenvolvido em python `3.14.3`)
 - PySide6 `6.11.2` - GUI
 - logging - Geração de arquivos log
 - Pathlib, os, sys, ctypes - Operações de arquivos e requisição UAC
+
+**É importante notar que o projeto foi feito para Windows e não possui suporte multiplataforma.**
+
+**A aplicação pode pedir permissões administrativas para limpar pastas protegidas pelo sistema. Não se preocupe, pois todos os diretórios presentes podem ser esvaziados com segurança.**
 
 ## Objetivo e funcionamento
 Automatizar a limpeza de arquivos temporários criados pelo sistema operacional e armazenados em diretórios como `temp` e `%temp%`.
@@ -23,16 +30,55 @@ Fluxo de funcionamento:
 5. Se aceita, o processo é relançado e as pastas admin são limpas.
 6. Ao fim, uma caixa de mensagem mostra quantas pastas foram afetadas, informação caso algum diretório não possa ser acessado e quantos MiB foram liberados.
 
+## Logs
+A aplicação gera registros automáticos para documentar operações e erros. Importantes para analisar comportamento inesperado. Para encontrá-los, faça o seguinte:
+1. Pressione `Win + R` e digite `%LOCALAPPDATA%`.
+2. Procure pelo diretório `TemporaryFilesCleaner` e abra-o.
+3. Você verá um arquivo chamado `cleanup.log`. Caso não o veja, execute o programa que ele será criado.
+
 ## Desafios
 Alguns dos pontos que se provaram desafiadores durante o desenvolvimento do projeto são:
-- **Ordem de limpeza dos diretórios**
+- **Ordem de limpeza dos diretórios:**
     Um dos desafios menores que foi essencial ser resolvido para a aplicação funcionar como desejado. O problema: em um determinado estado do projeto, mesmo que o usuário recusasse a elevação para admin, o programa ainda tentava limpar as pastas.
     Solução: estruturar com mais cuidado o fluxo da função de limpeza e proteger que código indesejado seja executado usando `return` em pontos específicos.
-- **Requisição de privilégios de administrador**
+- **Requisição de privilégios de administrador:**
     Foi a minha primeira vez utilizando a biblioteca `ctypes` e acessando funções das DLLs do próprio Windows. A linha para relançar o processo com permissões de administrador `ShellExecuteW(None, "runas", ...)` se mostrou particularmente complexa de entender em um primeiro contato, considerando a quantidade de parâmetros (6).
-- **Passagem de argumentos por linha de comando**
+- **Passagem de argumentos por linha de comando:**
     Consideravelmente o ponto que mais me travou do projeto. O problema: ao relançar o processo como administrador, o usuário precisava remarcar as caixas de seleção e clicar novamente o botão de limpeza. O aplicativo não tinha nenhuma persistência de estado.
     Solução: passar as informações necessárias para o processo elevado por linha de comando e decidir o que fazer com base no que foi transmitido. Para isso, foi usada a biblioteca `argparse` para passar os argumentos ao código de requisição citado no item acima.
+
+## Limitações conhecidas
+Tanto a interface gráfica da aplicação (GUI) quanto a operação de limpeza são executadas na mesma thread principal. Isso faz com que, durante uma limpeza muito extensa, a aplicação se torne irresponsiva e "congele" para o usuário. A solução seria implementar multithreading e separar a execução da limpeza da interface gráfica.
+
+## Como executar
+
+1. Clone o repositório no diretório desejado.
+```bash
+git clone https://github.com/VPivato/temporary_files_cleaner.git
+```
+
+2. Acesse o diretório clonado.
+```bash
+cd temporary_files_cleaner
+```
+
+3. Crie um ambiente virtual - Windows (Powershell).
+```powershell
+py -m venv .venv
+```
+
+4. Ative o ambiente virtual - Windows (Powershell).
+```powershell
+.venv/scripts/activate.ps1
+```
+
+5. Instale as dependências.
+```bash
+pip install -r requirements.txt
+```
+
+6. Abra `main.py` e execute.
+
 
 ## Referências
 Alguns dos materiais usados durante o desenvolvimento do projeto são:
@@ -42,4 +88,4 @@ Alguns dos materiais usados durante o desenvolvimento do projeto são:
 - [Documentação oficial para PySide6.QtWidgets](https://doc.qt.io/qtforpython-6/PySide6/QtWidgets/index.html#module-PySide6.QtWidgets)
 - [Como acessar variáveis do ambiente Windows: GeeksforGeeks.com](https://www.geeksforgeeks.org/python/access-environment-variable-values-in-python/)
 - [Argumentos de linha de comando: GeeksforGeeks.com](https://www.geeksforgeeks.org/python/command-line-arguments-in-python/). Para passar argumentos entre o processo não-admin e o processo elevado usando a biblioteca `argparse`.
-- Icone da aplicação: [Clean icons created by Magnific - Flaticon](https://www.flaticon.com/free-icons/clean)
+- Ícone da aplicação: [Clean icons created by Magnific - Flaticon](https://www.flaticon.com/free-icons/clean)
