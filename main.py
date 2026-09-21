@@ -8,7 +8,12 @@ from folder_options import FOLDER_OPTIONS
 from utils import format_message, bytes_to_mib
 from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QCheckBox, QPushButton,QVBoxLayout, QWidget, QFrame, QMessageBox
 
-ICON_PATH = Path(__file__).resolve().parent / "assets" / "icon.png"
+def resource_path(relative_path:str) -> Path:
+    if hasattr(sys, "_MEIPASS"):
+        return Path(sys._MEIPASS) / relative_path
+    return Path(__file__).resolve().parent / relative_path
+
+ICON_PATH =  resource_path("assets/icon.ico")
 
 cleaner = Cleaner(logger)
 

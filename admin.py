@@ -38,7 +38,12 @@ def request_admin_privileges(logger:Logger, extra_args:list[str]):
             return True
         
         try:
-            params = subprocess.list2cmdline(sys.argv + extra_args)
+            if getattr(sys, "frozen", False):
+                # Executável empacotado: não reenvia o próprio caminho como argumento.
+                params = subprocess.list2cmdline(extra_args)
+            else:
+                # Rodando como script: o interpretador precisa do caminho do script.
+                params = subprocess.list2cmdline(sys.argv + extra_args)
             result = ctypes.windll.shell32.ShellExecuteW(None, "runas", get_pythonw(), params, str(Path(__file__).resolve().parent), 1)
             if result > 32:
                 logger.info("Iniciado: processo com privilegios de administrador")

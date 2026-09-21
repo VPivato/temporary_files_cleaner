@@ -17,7 +17,7 @@ Bibliotecas centrais usadas:
 
 **É importante notar que o projeto foi feito para Windows e não possui suporte multiplataforma.**
 
-**A aplicação pode pedir permissões administrativas para limpar pastas protegidas pelo sistema. Não se preocupe, pois todos os diretórios presentes podem ser esvaziados com segurança.**
+**A aplicação pode pedir permissões administrativas para limpar pastas protegidas pelo sistema. Todos os diretórios listados são alvos comuns de ferramentas de limpeza.**
 
 ## Objetivo e funcionamento
 Automatizar a limpeza de arquivos temporários criados pelo sistema operacional e armazenados em diretórios como `temp` e `%temp%`.
@@ -77,7 +77,10 @@ py -m venv .venv
 pip install -r requirements.txt
 ```
 
-6. Abra `main.py` e execute.
+6. Execute `main.py`.
+```bash
+py main.py
+```
 
 
 ## Referências
